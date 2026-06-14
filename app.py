@@ -74,18 +74,18 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-PLOTLY_TEMPLATE = dict(
-    layout=go.Layout(
+def base_layout(**overrides):
+    """Return a dict of base layout settings, with overrides applied."""
+    layout = dict(
         paper_bgcolor=BG_CARD,
         plot_bgcolor=BG_CARD,
         font=dict(color=TEXT, family="Georgia, serif"),
-        xaxis=dict(gridcolor=BORDER, zerolinecolor=BORDER),
-        yaxis=dict(gridcolor=BORDER, zerolinecolor=BORDER),
         colorway=[ACCENT, "#8a9bd4", "#d47a7a", "#7ad4a0", "#d4b87a", "#a07ad4"],
         legend=dict(bgcolor="rgba(0,0,0,0)"),
         margin=dict(l=40, r=20, t=50, b=40),
     )
-)
+    layout.update(overrides)
+    return layout
 
 
 # ── Data loading ───────────────────────────────────────────────────────────
@@ -199,13 +199,13 @@ with c1:
     fig.add_trace(go.Bar(x=trend["DATE"], y=trend["incidents"], name="Incidents", marker_color=ACCENT, opacity=0.7))
     fig.add_trace(go.Scatter(x=trend["DATE"], y=trend["fatalities"], name="Fatalities", yaxis="y2",
                               mode="lines", line=dict(color="#d47a7a", width=2)))
-    fig.update_layout(
-        **PLOTLY_TEMPLATE["layout"],
+    fig.update_layout(**base_layout(
+        xaxis=dict(gridcolor=BORDER, zerolinecolor=BORDER),
         yaxis=dict(title="Incidents", gridcolor=BORDER),
         yaxis2=dict(title="Fatalities", overlaying="y", side="right", showgrid=False),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, bgcolor="rgba(0,0,0,0)"),
         height=400,
-    )
+    ))
     st.plotly_chart(fig, use_container_width=True)
 
 with c2:
@@ -213,8 +213,8 @@ with c2:
     type_counts = filtered["TYPE1"].value_counts().head(8).reset_index()
     type_counts.columns = ["TYPE1", "count"]
     fig2 = px.pie(type_counts, values="count", names="TYPE1", hole=0.5)
-    fig2.update_layout(**PLOTLY_TEMPLATE["layout"], height=400, showlegend=True,
-                       legend=dict(font=dict(size=9)))
+    fig2.update_layout(**base_layout(height=400, showlegend=True,
+                       legend=dict(font=dict(size=9), bgcolor="rgba(0,0,0,0)")))
     fig2.update_traces(textinfo="percent", textfont_size=10)
     st.plotly_chart(fig2, use_container_width=True)
 
@@ -238,8 +238,8 @@ with c3:
             zoom=4.5, center=dict(lat=5.0, lon=46.0),
             mapbox_style="carto-darkmatter",
         )
-        fig3.update_layout(**PLOTLY_TEMPLATE["layout"], height=450,
-                          legend=dict(font=dict(size=9)))
+        fig3.update_layout(**base_layout(height=450,
+                          legend=dict(font=dict(size=9), bgcolor="rgba(0,0,0,0)")))
         st.plotly_chart(fig3, use_container_width=True)
     else:
         st.info("No geolocated incidents in current filter.")
@@ -250,8 +250,9 @@ with c4:
     fms_counts.columns = ["FMS", "count"]
     fig4 = px.bar(fms_counts, x="count", y="FMS", orientation="h")
     fig4.update_traces(marker_color=ACCENT)
-    fig4.update_layout(**PLOTLY_TEMPLATE["layout"], height=450,
-                       yaxis=dict(autorange="reversed", gridcolor=BORDER))
+    fig4.update_layout(**base_layout(height=450,
+                       xaxis=dict(gridcolor=BORDER, zerolinecolor=BORDER),
+                       yaxis=dict(autorange="reversed", gridcolor=BORDER)))
     st.plotly_chart(fig4, use_container_width=True)
 
 # ── Row 3: Top actors + fatality breakdown ───────────────────────────────
@@ -263,8 +264,9 @@ with c5:
     actor_counts.columns = ["ACTOR", "count"]
     fig5 = px.bar(actor_counts, x="count", y="ACTOR", orientation="h")
     fig5.update_traces(marker_color=ACCENT)
-    fig5.update_layout(**PLOTLY_TEMPLATE["layout"], height=400,
-                       yaxis=dict(autorange="reversed", gridcolor=BORDER))
+    fig5.update_layout(**base_layout(height=400,
+                       xaxis=dict(gridcolor=BORDER, zerolinecolor=BORDER),
+                       yaxis=dict(autorange="reversed", gridcolor=BORDER)))
     st.plotly_chart(fig5, use_container_width=True)
 
 with c6:
@@ -272,8 +274,9 @@ with c6:
     fatal_by_actor = filtered.groupby("ACTOR")["FATALITY"].sum().sort_values(ascending=False).head(10).reset_index()
     fig6 = px.bar(fatal_by_actor, x="FATALITY", y="ACTOR", orientation="h")
     fig6.update_traces(marker_color="#d47a7a")
-    fig6.update_layout(**PLOTLY_TEMPLATE["layout"], height=400,
-                       yaxis=dict(autorange="reversed", gridcolor=BORDER))
+    fig6.update_layout(**base_layout(height=400,
+                       xaxis=dict(gridcolor=BORDER, zerolinecolor=BORDER),
+                       yaxis=dict(autorange="reversed", gridcolor=BORDER)))
     st.plotly_chart(fig6, use_container_width=True)
 
 # ── Footer ────────────────────────────────────────────────────────────────
