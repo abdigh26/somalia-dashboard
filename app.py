@@ -50,6 +50,12 @@ st.markdown(f"""
     [data-testid="stMetricValue"] {{
         color: {ACCENT} !important;
         font-family: 'Georgia', serif;
+        font-size: 1.4rem !important;
+        overflow: visible !important;
+        white-space: nowrap !important;
+    }}
+    [data-testid="stMetric"] {{
+        overflow: visible !important;
     }}
     [data-testid="stMetricLabel"] {{
         color: {TEXT_DIM} !important;
@@ -70,6 +76,15 @@ st.markdown(f"""
         text-transform: uppercase;
         color: {ACCENT};
         margin-bottom: 0.5rem;
+    }}
+    @media (max-width: 640px) {{
+        [data-testid="stMetricValue"] {{
+            font-size: 1.1rem !important;
+        }}
+        [data-testid="column"] {{
+            min-width: 45% !important;
+            flex: 1 1 45% !important;
+        }}
     }}
 </style>
 """, unsafe_allow_html=True)
