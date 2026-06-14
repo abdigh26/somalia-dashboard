@@ -142,6 +142,65 @@ except Exception as e:
     st.error(f"Could not load data: {e}")
     st.stop()
 
+# ── Full-screen map mode ──────────────────────────────────────────────────
+query_params = st.query_params
+if query_params.get("fullmap") == "1":
+    st.markdown(
+        f'<a href="?" target="_self" style="font-family:monospace; font-size:0.7rem; '
+        f'letter-spacing:0.1em; text-transform:uppercase; color:{ACCENT}; '
+        f'text-decoration:none;">← Back to Dashboard</a>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown('<div class="eyebrow" style="margin-top:1rem;">FULL-SCREEN VIEW</div>', unsafe_allow_html=True)
+    st.subheader("Incident Map")
+
+    # Reuse same sidebar filters
+    min_date_fs = df["DATE"].min().date()
+    max_date_fs = df["DATE"].max().date()
+
+    fs_date_range = st.sidebar.date_input(
+        "Date range", value=(min_date_fs, max_date_fs),
+        min_value=min_date_fs, max_value=max_date_fs, key="fs_date"
+    )
+    fs_fms = st.sidebar.multiselect("Federal Member State", sorted(df["FMS"].dropna().unique().tolist()), key="fs_fms")
+    fs_actors = st.sidebar.multiselect("Actor", sorted(df["ACTOR"].dropna().unique().tolist()), key="fs_actor")
+    fs_types = st.sidebar.multiselect("Event Type", sorted(df["TYPE1"].dropna().unique().tolist()), key="fs_type")
+
+    fs_df = df.copy()
+    if len(fs_date_range) == 2:
+        s, e = fs_date_range
+        fs_df = fs_df[(fs_df["DATE"].dt.date >= s) & (fs_df["DATE"].dt.date <= e)]
+    if fs_fms:
+        fs_df = fs_df[fs_df["FMS"].isin(fs_fms)]
+    if fs_actors:
+        fs_df = fs_df[fs_df["ACTOR"].isin(fs_actors)]
+    if fs_types:
+        fs_df = fs_df[fs_df["TYPE1"].isin(fs_types)]
+
+    fs_map = fs_df.dropna(subset=["LATITUDE", "LONGITUDE"])
+    fs_map = fs_map[(fs_map["LATITUDE"] != 0) & (fs_map["LONGITUDE"] != 0)]
+
+    if len(fs_map) > 10000:
+        fs_map = fs_map.sample(10000, random_state=1)
+        st.caption(f"Showing a sample of 10,000 of {len(fs_df.dropna(subset=['LATITUDE','LONGITUDE'])):,} geolocated incidents")
+
+    if len(fs_map):
+        fig_fs = px.scatter_mapbox(
+            fs_map, lat="LATITUDE", lon="LONGITUDE",
+            color="TYPE1", size="FATALITY", size_max=18,
+            hover_data=["DATE", "ACTOR", "LOCALITY", "FATALITY"],
+            zoom=5, center=dict(lat=5.0, lon=46.0),
+            mapbox_style="carto-darkmatter",
+        )
+        fig_fs.update_layout(**base_layout(height=850,
+                            legend=dict(font=dict(size=10), bgcolor="rgba(0,0,0,0)")))
+        st.plotly_chart(fig_fs, use_container_width=True)
+    else:
+        st.info("No geolocated incidents in current filter.")
+
+    st.stop()
+
 # ── Sidebar filters ───────────────────────────────────────────────────────
 st.sidebar.markdown('<div class="eyebrow">FILTERS</div>', unsafe_allow_html=True)
 
@@ -237,7 +296,18 @@ with c2:
 c3, c4 = st.columns([2, 1])
 
 with c3:
-    st.subheader("Incident Map")
+    map_header_col1, map_header_col2 = st.columns([3, 1])
+    with map_header_col1:
+        st.subheader("Incident Map")
+    with map_header_col2:
+        st.markdown(
+            f'<a href="?fullmap=1" target="_self" style="float:right; font-family:monospace; '
+            f'font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase; '
+            f'color:{ACCENT}; text-decoration:none; border:1px solid {BORDER}; '
+            f'padding:0.4rem 0.8rem; border-radius:3px;">⛶ Expand</a>',
+            unsafe_allow_html=True
+        )
+
     map_df = filtered.dropna(subset=["LATITUDE", "LONGITUDE"])
     map_df = map_df[(map_df["LATITUDE"] != 0) & (map_df["LONGITUDE"] != 0)]
 
