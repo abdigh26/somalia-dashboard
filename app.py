@@ -188,7 +188,7 @@ c1, c2 = st.columns([2, 1])
 with c1:
     st.subheader("Incidents Over Time")
     freq = st.radio("Aggregation", ["Monthly", "Yearly"], horizontal=True, label_visibility="collapsed")
-    period = "M" if freq == "Monthly" else "Y"
+    period = "ME" if freq == "Monthly" else "YE"
 
     trend = filtered.set_index("DATE").resample(period).agg(
         incidents=("ID", "count"),
