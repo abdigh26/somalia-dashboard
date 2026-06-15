@@ -1,0 +1,17 @@
+name: Keep Streamlit App Awake
+
+on:
+  schedule:
+    # Runs every 12 hours (At minute 0, every 12th hour)
+    - cron: '0 */12 * * *'
+  # Allows you to manually trigger the workflow from the GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  ping-app:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send a request to the Streamlit App
+        run: |
+          curl -I -s https://somalia-dashboard-ngeyxusdcd9jjtvsi4bh5a.streamlit.app/ | head -n 1
