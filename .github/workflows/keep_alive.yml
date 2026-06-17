@@ -2,44 +2,24 @@ name: Keep Streamlit App Awake
 
 on:
   schedule:
-    - cron: '0 */12 * * *'  # Every 12 hours
+    - cron: '0 */12 * * *'
   workflow_dispatch:
 
 jobs:
   wake-app:
     runs-on: ubuntu-latest
     steps:
-      - name: Wake Streamlit app with headless browser
-        run: |
-          npm install -g playwright@latest
-          npx playwright install chromium --with-deps
-          node -e "
-          const { chromium } = require('playwright');
-          (async () => {
-            const browser = await chromium.launch();
-            const page = await browser.newPage();
-            console.log('Navigating to app...');
-            await page.goto('https://somalia-dashboard-ngeyxusdcd9jjtvsi4bh5a.streamlit.app/', {
-              waitUntil: 'networkidle',
-              timeout: 120000
+      - name: Wake Streamlit app
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const https = require('https');
+            const url = 'https://somalia-dashboard-ngeyxusdcd9jjtvsi4bh5a.streamlit.app/';
+            
+            await new Promise((resolve, reject) => {
+              https.get(url, (res) => {
+                console.log(`Status: ${res.statusCode}`);
+                console.log('App pinged successfully');
+                resolve();
+              }).on('error', reject);
             });
-            const title = await page.title();
-            console.log('Page title:', title);
-
-            // If sleep screen appears, click wake button
-            try {
-              const wakeBtn = await page.getByText('Yes, get this app back up!');
-              if (await wakeBtn.isVisible()) {
-                console.log('App was sleeping â€” waking it up...');
-                await wakeBtn.click();
-                await page.waitForTimeout(30000);
-                console.log('App woken up.');
-              } else {
-                console.log('App is already awake.');
-              }
-            } catch(e) {
-              console.log('App running normally.');
-            }
-            await browser.close();
-          })();
-          "
