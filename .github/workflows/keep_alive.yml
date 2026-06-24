@@ -9,17 +9,34 @@ jobs:
   wake-app:
     runs-on: ubuntu-latest
     steps:
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
       - name: Wake Streamlit app
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const https = require('https');
-            const url = 'https://somalia-dashboard-ngeyxusdcd9jjtvsi4bh5a.streamlit.app/';
-            
-            await new Promise((resolve, reject) => {
-              https.get(url, (res) => {
-                console.log(`Status: ${res.statusCode}`);
-                console.log('App pinged successfully');
-                resolve();
-              }).on('error', reject);
-            });
+        run: |
+          python3 - <<'EOF'
+          import asyncio
+          from playwright.async_api import async_playwright
+
+          async def wake():
+              async with async_playwright() as p:
+                  browser = await p.chromium.launch()
+                  page = await browser.new_page()
+                  await page.goto("https://somalia-dashboard-ngeyxusdcd9jjtvsi4bh5a.streamlit.app/", timeout=60000)
+                  await page.wait_for_timeout(15000)
+
+                  # Handle "wake up" screen if app was sleeping
+                  try:
+                      await page.click("text=Yes, get this app back up!", timeout=5000)
+                      print("App was sleeping — wake-up button clicked")
+                      await page.wait_for_timeout(20000)
+                  except:
+                      print("App was already awake")
+
+                  print("App loaded successfully")
+                  await browser.close()
+
+          asyncio.run(wake())
+          EOF
